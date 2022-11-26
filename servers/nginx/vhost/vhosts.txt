@@ -2,9 +2,8 @@ server {
     listen  backendapp.followcarservice.com:443;
 #    listen [::]:443;
     ssl    on;
-    ssl_certificate    /etc/ssl/fcs/fcs.cer;
-#    ssl_trusted_certificate    /etc/ssl/fcs/fcs.cer;
-    ssl_certificate_key    /etc/ssl/fcs/private.key;
+    ssl_certificate    /path/to/your/domaine/cer;
+    ssl_certificate_key    /path/to/your/domaine/private/key;
     server_name backendapp.followcarservice.com;
 
     location / {

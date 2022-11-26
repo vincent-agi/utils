@@ -1,9 +1,9 @@
 # Database name
-db_name=FCS
+db_name=database_name
 # Backup storage directory 
 backupfolder=~/postgresql/backups
 # Notification email address 
-recipient_email=admin@followupsystem.fr
+recipient_email=email@domaine.com
 # Number of days to store the backup 
 keep_day=10
 sqlfile=$backupfolder/all-database-$(date +%d-%m-%Y_%H-%M-%S).sql
@@ -11,7 +11,7 @@ zipfile=$backupfolder/all-database-$(date +%d-%m-%Y_%H-%M-%S).zip
 #create backup folder
 mkdir -p $backupfolder
 # Create a backup
-if pg_dump -U postgres -h localhost -Fc -d $db_name > $sqlfile ; then
+if pg_dump -U bd_user-h db_host-Fc -d $db_name > $sqlfile ; then
    echo 'Sql dump created'
 else
    echo 'pg_dump return non-zero code' | mailx -s 'No backup was created!' $recipient_email

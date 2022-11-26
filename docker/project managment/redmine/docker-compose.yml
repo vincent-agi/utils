@@ -30,3 +30,4 @@ networks:
   redmine:
     driver: bridge
 
+# at the first connection use admin admin
