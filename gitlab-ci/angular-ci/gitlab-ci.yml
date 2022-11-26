@@ -1,0 +1,31 @@
+image: node:16-buster
+
+stages:
+  - CodingStandards
+  - Docker
+
+lint:
+  stage: CodingStandards
+  script:
+    - yarn install
+    - yarn ngcc --properties es2015 --create-ivy-entry-points
+    - yarn ng lint
+  cache:
+    key:
+      files:
+        - yarn.lock
+    paths:
+      - node_modules
+    policy: pull
+
+build:
+  image:
+    name: docker:latest
+  services:
+    - docker:dind
+  stage: Docker
+  variables:
+    APP_ENV: develop
+  script:
+    - chmod a+x .docker/build.sh
+    - sh .docker/build.sh

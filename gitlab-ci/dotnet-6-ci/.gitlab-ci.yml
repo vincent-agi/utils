@@ -1,0 +1,62 @@
+image : mcr.microsoft.com/dotnet/sdk:6.0
+
+stages:
+  - test
+  - build
+  - stagging
+  - release
+
+test:
+  stage: test
+  script:
+    - dotnet test
+
+build:
+  variables:
+    ASPNETCORE_ENVIRONMENT: "Development"
+  stage: build
+  script:
+    - dotnet build
+
+stagging:
+  variables:
+    ASPNETCORE_ENVIRONMENT: "Production"
+    deploy_path: "src/App/"
+  stage: stagging
+  artifacts:
+    paths:
+      - src/App/bin/release
+  only:
+    - stagging
+  before_script:
+    - apt-get update -qy
+    - apt-get install -y lftp
+  script:
+    - dotnet build "fcs-backend.csproj" --seld-contained --runtime  debian.11-x64 -c Release -o ./build 
+    - dotnet publish "fcs-backend.csproj" -c Release -o ./publish 
+  after_script:
+    - lftp -e "open $SERVER_STAGE; user $FTP_USERNAME $FTP_PASSWORD; mirror -X .* -X .*/ --reverse --verbose --delete ./publish . ; bye"
+
+release:
+  stage: release
+  variables:
+    ASPNETCORE_ENVIRONMENT: "Production"
+    deploy_path: "src/App/"
+  only:
+    - main
+  artifacts:
+    paths:
+      - src/App/bin/release
+
+  before_script:
+    - apt-get update -qy
+    - apt-get install -y lftp
+  script:
+    - cd $deploy_path
+    # publish the files - this will generate the publish files in bin/release 
+    - dotnet build "fcs-backend.csproj" --self-contained --runtime  debian.11-x64 -c release -o app/release
+    - dotnet publish "fcs-backend.csproj" -c release -o app/release
+    # install zip and lftp
+    - apt-get update -qq && apt-get install -y -qq zip lftp 
+  after_script:
+    - lftp -e "set ssl:verify-certificate no; open $SERVER_STAGE; user $FTP_USERNAME $FTP_PASSWORD; mirror -X .* -X .*/ --reverse --verbose --delete app/release . ; bye"

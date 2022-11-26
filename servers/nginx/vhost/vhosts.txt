@@ -1,0 +1,14 @@
+server {
+    listen  backendapp.followcarservice.com:443;
+#    listen [::]:443;
+    ssl    on;
+    ssl_certificate    /etc/ssl/fcs/fcs.cer;
+#    ssl_trusted_certificate    /etc/ssl/fcs/fcs.cer;
+    ssl_certificate_key    /etc/ssl/fcs/private.key;
+    server_name backendapp.followcarservice.com;
+
+    location / {
+        include /etc/nginx/custom_configs/proxy.conf;
+        proxy_pass https://127.0.0.1:5002;
+    }
+}
