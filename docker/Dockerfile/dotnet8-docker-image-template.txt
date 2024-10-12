@@ -1,11 +1,11 @@
 # Remplace MyApp, MyApp.csprojet et MyApp.dll par le nom de ton application
 # Par exemple kekonmange, kekonmange.csproj et kekonmange.dll
 
-# Utilise une image officielle .NET 8 SDK pour la compilation d'une application web
+# Utilise l'image officielle .NET 8 SDK pour la compilation d'une application web
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
+EXPOSE 5000 # http
+EXPOSE 5001 # https
 
 # Utilise une image officielle .NET 8 SDK pour la construction
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
