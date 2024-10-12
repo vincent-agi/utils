@@ -1,0 +1,23 @@
+# Copie tout le reste et compile en mode release
+COPY . .
+# changer "MyApp" par le nom de ton app
+WORKDIR "/src/MyApp"
+# adapter avec le nom correct du fichier csproj
+RUN dotnet publish "MyApp.csproj" -c Release -o /app/publish
+
+# Utilise une image légère pour exécuter l'application
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+
+# Ajoute un utilisateur non-root
+RUN adduser --disabled-password --gecos "" appuser
+
+# Copie les fichiers publiés
+COPY --from=build /app/publish .
+
+# Change l'utilisateur par défaut pour éviter d'exécuter en root (bonne pratique)
+USER appuser
+
+# Démarre l'application
+# remplacer "MyApp.dll" par le nom correcte du fichier dll de sortie
+ENTRYPOINT ["dotnet", "MyApp.dll"]
