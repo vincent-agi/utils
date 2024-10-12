@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  reverse-proxy:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/www/certbot
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+    depends_on:
+      - webapp
+
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_URLS=http://+:5000;https://+:5001
+    depends_on:
+      - reverse-proxy
+
+volumes:
+  certbot-etc:
+  certbot-var:
