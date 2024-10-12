@@ -1,8 +1,23 @@
+# Remplace MyApp, MyApp.csprojet et MyApp.dll par le nom de ton application
+# Par exemple kekonmange, kekonmange.csproj et kekonmange.dll
+
+# Utilise une image officielle .NET 8 SDK pour la compilation d'une application web
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+# Utilise une image officielle .NET 8 SDK pour la construction
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copie les fichiers csproj et restaure les dépendances
+COPY ["MyApp/MyApp.csproj", "MyApp/"]
+RUN dotnet restore "MyApp/MyApp.csproj"
+
 # Copie tout le reste et compile en mode release
 COPY . .
-# changer "MyApp" par le nom de ton app
 WORKDIR "/src/MyApp"
-# adapter avec le nom correct du fichier csproj
 RUN dotnet publish "MyApp.csproj" -c Release -o /app/publish
 
 # Utilise une image légère pour exécuter l'application
@@ -15,9 +30,8 @@ RUN adduser --disabled-password --gecos "" appuser
 # Copie les fichiers publiés
 COPY --from=build /app/publish .
 
-# Change l'utilisateur par défaut pour éviter d'exécuter en root (bonne pratique)
+# Change l'utilisateur par défaut pour éviter d'exécuter en root
 USER appuser
 
 # Démarre l'application
-# remplacer "MyApp.dll" par le nom correcte du fichier dll de sortie
 ENTRYPOINT ["dotnet", "MyApp.dll"]
