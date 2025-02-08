@@ -1,26 +1,30 @@
 #!/bin/bash
 
-# Variables
-USER="votre_utilisateur"
-SERVER_IP="ip_du_serveur"
+# Définition des variables
+SSH_CONFIG="/etc/ssh/sshd_config"
+NEW_SSH_PORT=5250
 
-# Générer une clé SSH si elle n'existe pas
-if [ ! -f ~/.ssh/id_ed25519 ]; then
-    ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -q -N ""
-    echo "Clé SSH générée."
-else
-    echo "Clé SSH existante."
+# Vérifier si l'utilisateur est root
+if [[ $EUID -ne 0 ]]; then
+   echo "Ce script doit être exécuté en tant que root." 
+   exit 1
 fi
 
-# Copier la clé publique sur le serveur
-ssh-copy-id -i ~/.ssh/id_ed25519.pub $USER@$SERVER_IP
+echo "Configuration de SSH sur le port $NEW_SSH_PORT..."
 
-# Configurer le serveur SSH
-ssh $USER@$SERVER_IP <<EOF
-sudo sed -i 's/^#?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
-sudo sed -i 's/^#?PubkeyAuthentication .*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-sudo sed -i 's/^#?PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
-sudo systemctl restart ssh
-EOF
+# Modifier le port SSH
+sed -i "s/^#Port 22/Port $NEW_SSH_PORT/" $SSH_CONFIG
 
-echo "Configuration SSH terminée. Testez la connexion avec : ssh $USER@$SERVER_IP"
+# Désactiver l'authentification par mot de passe
+sed -i "s/^#PasswordAuthentication yes/PasswordAuthentication no/" $SSH_CONFIG
+sed -i "s/^PasswordAuthentication yes/PasswordAuthentication no/" $SSH_CONFIG
+
+# Activer l'authentification par clé SSH
+sed -i "s/^#PubkeyAuthentication yes/PubkeyAuthentication yes/" $SSH_CONFIG
+
+# Redémarrer le service SSH
+systemctl restart ssh
+
+echo "✅ Configuration terminée !"
+echo "⚠️ Pense à ouvrir le port $NEW_SSH_PORT dans le firewall :"
+echo "    sudo ufw allow $NEW_SSH_PORT/tcp"
