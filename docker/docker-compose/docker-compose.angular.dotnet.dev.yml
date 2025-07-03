@@ -1,0 +1,21 @@
+services:
+  angular:
+    build:
+      context: .
+      dockerfile: Dockerfile.angular.dev
+    volumes:
+      - ./angular-app:/app
+      - /app/node_modules
+    ports:
+      - "4200:4200"
+
+  dotnet:
+    build:
+      context: .
+      dockerfile: Dockerfile.dotnet.dev
+    volumes:
+      - ./dotnet-app:/app
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development

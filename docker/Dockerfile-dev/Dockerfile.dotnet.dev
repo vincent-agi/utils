@@ -1,0 +1,10 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+
+WORKDIR /app
+
+# Idem, sources montées en volume
+EXPOSE 5000
+ENV ASPNETCORE_URLS=http://+:5000
+
+# Hot reload (dotnet watch) nécessite un SDK, pas une image runtime
+CMD ["dotnet", "watch", "run"]
