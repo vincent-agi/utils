@@ -33,13 +33,96 @@ get_remote_info() {
 
 transfer_public_key() {
     print_section "Transferring Public Key to Server"
-    ssh-copy-id -i "$KEYPATH.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" | tee -a "$LOGFILE"
+    MAX_ATTEMPTS=3
+    ATTEMPT=1
+    while (( ATTEMPT <= MAX_ATTEMPTS )); do
+        SSHCOPYID_OUTPUT=$(ssh-copy-id -i "$KEYPATH.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" 2>&1 | tee -a "$LOGFILE")
+        if echo "$SSHCOPYID_OUTPUT" | grep -q "REMOTE HOST IDENTIFICATION HAS CHANGED"; then
+            echo "$SSHCOPYID_OUTPUT" | tee -a "$LOGFILE"
+            OFFENDING_LINE=$(echo "$SSHCOPYID_OUTPUT" | grep "Offending" | grep -o 'known_hosts:[0-9]*' | cut -d: -f2)
+            if [[ -n "$OFFENDING_LINE" ]]; then
+                echo "Le fichier known_hosts contient une entrée conflictuelle à la ligne $OFFENDING_LINE." | tee -a "$LOGFILE"
+                read -p "Voulez-vous supprimer cette entrée et réessayer ? (y/N): " CONFIRM_REMOVE
+                if [[ "$CONFIRM_REMOVE" == "y" || "$CONFIRM_REMOVE" == "Y" ]]; then
+                    sed -i '' "${OFFENDING_LINE}d" "$HOME/.ssh/known_hosts"
+                    echo "Entrée supprimée. Nouvelle tentative de transfert de la clé..." | tee -a "$LOGFILE"
+                    ((ATTEMPT++))
+                    continue
+                else
+                    echo "Transfert annulé par l'utilisateur." | tee -a "$LOGFILE"
+                    exit 4
+                fi
+            else
+                echo "Impossible de déterminer la ligne conflictuelle dans known_hosts. Veuillez vérifier manuellement." | tee -a "$LOGFILE"
+                exit 5
+            fi
+        elif echo "$SSHCOPYID_OUTPUT" | grep -q "Permission denied" || echo "$SSHCOPYID_OUTPUT" | grep -q "Too many authentication failures"; then
+            echo "Erreur d'authentification : $SSHCOPYID_OUTPUT" | tee -a "$LOGFILE"
+            read -p "Le serveur refuse l'accès. Voulez-vous réessayer ? (y/N): " RETRY
+            if [[ "$RETRY" == "y" || "$RETRY" == "Y" ]]; then
+                ((ATTEMPT++))
+                continue
+            else
+                echo "Transfert annulé par l'utilisateur." | tee -a "$LOGFILE"
+                exit 8
+            fi
+        else
+            break
+        fi
+    done
+    if (( ATTEMPT > MAX_ATTEMPTS )); then
+        echo "Trop de tentatives. Abandon." | tee -a "$LOGFILE"
+        exit 9
+    fi
 }
 
 verify_key_on_server() {
     print_section "Verifying Key on Server"
-    ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" "grep \"$(cat $KEYPATH.pub | cut -d' ' -f2)\" ~/.ssh/authorized_keys" >/dev/null
-    if [[ $? -ne 0 ]]; then
+    MAX_ATTEMPTS=3
+    ATTEMPT=1
+    while (( ATTEMPT <= MAX_ATTEMPTS )); do
+        VERIFY_OUTPUT=$(ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" "grep \"$(cat $KEYPATH.pub | cut -d' ' -f2)\" ~/.ssh/authorized_keys" 2>&1)
+        if echo "$VERIFY_OUTPUT" | grep -q "REMOTE HOST IDENTIFICATION HAS CHANGED"; then
+            echo "$VERIFY_OUTPUT" | tee -a "$LOGFILE"
+            OFFENDING_LINE=$(echo "$VERIFY_OUTPUT" | grep "Offending" | grep -o 'known_hosts:[0-9]*' | cut -d: -f2)
+            if [[ -n "$OFFENDING_LINE" ]]; then
+                echo "Le fichier known_hosts contient une entrée conflictuelle à la ligne $OFFENDING_LINE." | tee -a "$LOGFILE"
+                read -p "Voulez-vous supprimer cette entrée et réessayer ? (y/N): " CONFIRM_REMOVE
+                if [[ "$CONFIRM_REMOVE" == "y" || "$CONFIRM_REMOVE" == "Y" ]]; then
+                    sed -i '' "${OFFENDING_LINE}d" "$HOME/.ssh/known_hosts"
+                    echo "Entrée supprimée. Nouvelle tentative de vérification..." | tee -a "$LOGFILE"
+                    ((ATTEMPT++))
+                    continue
+                else
+                    echo "Vérification annulée par l'utilisateur." | tee -a "$LOGFILE"
+                    exit 6
+                fi
+            else
+                echo "Impossible de déterminer la ligne conflictuelle dans known_hosts. Veuillez vérifier manuellement." | tee -a "$LOGFILE"
+                exit 7
+            fi
+        elif echo "$VERIFY_OUTPUT" | grep -q "Permission denied" || echo "$VERIFY_OUTPUT" | grep -q "Too many authentication failures"; then
+            echo "Erreur d'authentification : $VERIFY_OUTPUT" | tee -a "$LOGFILE"
+            read -p "Le serveur refuse l'accès. Voulez-vous réessayer ? (y/N): " RETRY
+            if [[ "$RETRY" == "y" || "$RETRY" == "Y" ]]; then
+                ((ATTEMPT++))
+                continue
+            else
+                echo "Vérification annulée par l'utilisateur." | tee -a "$LOGFILE"
+                exit 10
+            fi
+        else
+            break
+        fi
+    done
+    if (( ATTEMPT > MAX_ATTEMPTS )); then
+        echo "Trop de tentatives. Abandon." | tee -a "$LOGFILE"
+        exit 11
+    fi
+    if [[ "$VERIFY_OUTPUT" == "" ]]; then
+        echo "Clé vérifiée sur le serveur." | tee -a "$LOGFILE"
+    else
+        echo "$VERIFY_OUTPUT" | tee -a "$LOGFILE"
         echo "Error: The key does not seem to be present on the server. Aborting." | tee -a "$LOGFILE"
         exit 2
     fi
