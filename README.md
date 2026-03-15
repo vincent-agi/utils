@@ -60,16 +60,11 @@ The goal of this toolkit is to simplify and automate the setup of essential secu
 
 3. Start with the SSH key setup script:
    ```bash
-   ./ssh-key-setup-and-server-config.sh
+   sudo ./ssh-key-setup-and-server-config.sh
    ```
    - Follow the interactive prompts to generate your SSH key and configure your server.
    - At the end, you can choose to run additional security scripts (SSH hardening) on your remote server.
-
-4. You can also run the other scripts individually if needed:
-   ```bash
-   ./sshd-secure-config.sh
-   ./fail2ban-setup-interactive.sh
-   ```
+ - At the end of SSH hardening, you can choose to run additional security scripts (fail2ban interactive configuration) on your remote server.
 
 ## Requirements
 - Bash shell
