@@ -84,7 +84,7 @@ SCRIPT_URL="https://raw.githubusercontent.com/vincent-agi/utils/refs/heads/main/
 SCRIPT_SHA256=$(curl -sSL $SCRIPT_URL | sha256sum | cut -d' ' -f1)
 echo "SHA256 du script téléchargé : $SCRIPT_SHA256" | tee -a $LOGFILE
 
-read -p "Souhaites-tu continuer et exécuter le script distant sur $REMOTE_HOST ? (o/N) : " CONFIRM
+read -p "Souhaites-tu continuer et exécuter le script distant sur $REMOTE_HOST (secure ssh)? (o/N) : " CONFIRM
 if [[ "$CONFIRM" != "o" && "$CONFIRM" != "O" ]]; then
     echo "Annulation à ta demande." | tee -a $LOGFILE
     exit 3
@@ -92,11 +92,11 @@ fi
 
 ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" "curl -sSL $SCRIPT_URL | bash" | tee -a $LOGFILE
 
-SCRIPT_URL="https://raw.githubusercontent.com/vincent-agi/utils/refs/heads/main/bash/sshkey-config.sh"
+SCRIPT_URL="https://raw.githubusercontent.com/vincent-agi/utils/refs/heads/main/fail2ban-setup-interactive.sh"
 SCRIPT_SHA256=$(curl -sSL $SCRIPT_URL | sha256sum | cut -d' ' -f1)
 echo "SHA256 du script téléchargé : $SCRIPT_SHA256" | tee -a $LOGFILE
 
-read -p "Souhaites-tu continuer et exécuter le script distant sur $REMOTE_HOST ? (o/N) : " CONFIRM
+read -p "Souhaites-tu continuer et exécuter le script distant sur $REMOTE_HOST (fairewall interne) ? (o/N) : " CONFIRM
 if [[ "$CONFIRM" != "o" && "$CONFIRM" != "O" ]]; then
     echo "Annulation à ta demande." | tee -a $LOGFILE
     exit 3
